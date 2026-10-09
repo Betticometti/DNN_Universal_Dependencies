@@ -1,3 +1,14 @@
+import os
+# device number 3 for group 7-8 (we are 8)
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+
+import torch
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
+
+\
+# START OF CODE
 name = "Riccardo"
 
 print("Hello, " + name + "!")
