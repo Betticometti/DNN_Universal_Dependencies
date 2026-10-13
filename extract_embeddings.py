@@ -4,14 +4,19 @@ from test_bert import dataset, tokenizer, model, device
 def extract_embeddings(data, layer):
 
     embeddings = []
+    labels = []
 
     for sentence in data:
 
+        sentence_embeddings = []
+        sentence_labels = []
         words = []
+        pos_tags = []
 
         for token in sentence:
             if isinstance(token["id"], int):
                 words.append(token["form"])
+                pos_tags.append(token["upos"])
 
         inputs = tokenizer(
             words,
@@ -38,16 +43,21 @@ def extract_embeddings(data, layer):
             if len(subtoken_vectors) > 0:
                 word_vector = torch.stack(subtoken_vectors).mean(dim=0)
 
-                embeddings.append(word_vector.cpu())
+                sentence_embeddings.append(word_vector.cpu())
+                sentence_labels.append(pos_tags[word_index])
 
-    return torch.stack(embeddings)
+        embeddings.append(torch.stack(sentence_embeddings))
+        labels.append(sentence_labels)
+
+    return embeddings, labels
 
 
-# Test on the first training sentence
-X = extract_embeddings(
-    dataset["train"][:1],
-    6
+# Test on the first three training sentences
+X, y = extract_embeddings(
+    dataset["train"][:3],
+    2
 )
 
-print("Embeddings shape:", X.shape)
-print("First word embedding:", X[0])
+print("Word:", dataset["train"][2][1]["form"])
+print("Label:", y[2][1])
+print("Embedding:", X[2][1])
