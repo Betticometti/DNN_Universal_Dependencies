@@ -9,6 +9,12 @@ __pycache__/
 # python package vscode
 .vscode/
 
+# Embeddings folder
+embeddings/
+
+# Plot folder
+plots/
+
 # Distribution / packaging
 .Python
 build/

@@ -1,3 +1,5 @@
+import os
+
 from sklearn.metrics import f1_score
 import torch
 import torch.nn as nn
@@ -168,7 +170,9 @@ def plot_training(train_losses, train_accuracies, val_accuracies):
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig("probe_layer8_training.png")
+    if not os.path.exists("plots"):
+        os.makedirs("plots")
+    plt.savefig("plots/probe_layer1_training.png")
     plt.close()
 
 
@@ -239,8 +243,8 @@ id_to_pos = {i: tag for i, tag in enumerate(POS_TAGS)}
 
 
 # Load layer 12 embeddings
-train_data = torch.load("train_layer8.pt", weights_only=True)
-val_data = torch.load("validation_layer8.pt", weights_only=True)
+train_data = torch.load("embeddings/train_layer1.pt", weights_only=True)
+val_data = torch.load("embeddings/validation_layer1.pt", weights_only=True)
 
 X_train = train_data["embeddings"]
 y_train = train_data["labels"]

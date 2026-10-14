@@ -1,5 +1,8 @@
 import torch
 from test_bert import dataset, tokenizer, model, device
+import os
+
+os.makedirs("embeddings", exist_ok=True)
 
 model.eval()
 
@@ -86,7 +89,9 @@ print("Train:", X_dat.shape, y_dat.shape)
 print("Validation:", X_val.shape, y_val.shape)
 print("Test:", X_test.shape, y_test.shape)
 
+if not os.path.exists("embeddings"):
+    os.makedirs("embeddings")
 
-torch.save({"embeddings": X_dat, "labels": y_dat}, "train_layer1.pt")
-torch.save({"embeddings": X_val, "labels": y_val}, "validation_layer1.pt")
-torch.save({"embeddings": X_test, "labels": y_test}, "test_layer1.pt")
+torch.save({"embeddings": X_dat, "labels": y_dat}, "embeddings/train_layer1.pt")
+torch.save({"embeddings": X_val, "labels": y_val}, "embeddings/validation_layer1.pt")
+torch.save({"embeddings": X_test, "labels": y_test}, "embeddings/test_layer1.pt")
