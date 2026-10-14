@@ -6,6 +6,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 import matplotlib.pyplot as plt
 
+LAYER_NUMBER = 1
+
 torch.manual_seed(42)
 
 # EPOCHS -- Number of complete passes over the training dataset.
@@ -172,7 +174,7 @@ def plot_training(train_losses, train_accuracies, val_accuracies):
     plt.tight_layout()
     if not os.path.exists("plots"):
         os.makedirs("plots")
-    plt.savefig("plots/probe_layer1_training.png")
+    plt.savefig(f"plots/probe_layer{LAYER_NUMBER}_training.png")
     plt.close()
 
 
@@ -243,8 +245,8 @@ id_to_pos = {i: tag for i, tag in enumerate(POS_TAGS)}
 
 
 # Load layer 12 embeddings
-train_data = torch.load("embeddings/train_layer1.pt", weights_only=True)
-val_data = torch.load("embeddings/validation_layer1.pt", weights_only=True)
+train_data = torch.load(f"embeddings/train_layer{LAYER_NUMBER}.pt", weights_only=True)
+val_data = torch.load(f"embeddings/validation_layer{LAYER_NUMBER}.pt", weights_only=True)
 
 X_train = train_data["embeddings"]
 y_train = train_data["labels"]

@@ -2,6 +2,8 @@ import torch
 from test_bert import dataset, tokenizer, model, device
 import os
 
+LAYER_NUMBER = 1
+
 os.makedirs("embeddings", exist_ok=True)
 
 model.eval()
@@ -76,13 +78,13 @@ def extract_embeddings(data, layer):
 
 
 print("Extracting training embeddings...")
-X_dat, y_dat = extract_embeddings(dataset["train"], 1)
+X_dat, y_dat = extract_embeddings(dataset["train"], LAYER_NUMBER)
 
 print("Extracting validation embeddings...")
-X_val, y_val = extract_embeddings(dataset["validation"], 1)
+X_val, y_val = extract_embeddings(dataset["validation"], LAYER_NUMBER)
 
 print("Extracting test embeddings...")
-X_test, y_test = extract_embeddings(dataset["test"], 1)
+X_test, y_test = extract_embeddings(dataset["test"], LAYER_NUMBER)
 
 
 print("Train:", X_dat.shape, y_dat.shape)
@@ -92,6 +94,6 @@ print("Test:", X_test.shape, y_test.shape)
 if not os.path.exists("embeddings"):
     os.makedirs("embeddings")
 
-torch.save({"embeddings": X_dat, "labels": y_dat}, "embeddings/train_layer1.pt")
-torch.save({"embeddings": X_val, "labels": y_val}, "embeddings/validation_layer1.pt")
-torch.save({"embeddings": X_test, "labels": y_test}, "embeddings/test_layer1.pt")
+torch.save({"embeddings": X_dat, "labels": y_dat}, f"embeddings/train_layer{LAYER_NUMBER}.pt")
+torch.save({"embeddings": X_val, "labels": y_val}, f"embeddings/validation_layer{LAYER_NUMBER}.pt")
+torch.save({"embeddings": X_test, "labels": y_test}, f"embeddings/test_layer{LAYER_NUMBER}.pt")
