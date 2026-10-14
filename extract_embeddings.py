@@ -1,4 +1,3 @@
-
 import torch
 from test_bert import dataset, tokenizer, model, device
 
@@ -74,13 +73,13 @@ def extract_embeddings(data, layer):
 
 
 print("Extracting training embeddings...")
-X_dat, y_dat = extract_embeddings(dataset["train"], 8)
+X_dat, y_dat = extract_embeddings(dataset["train"], 1)
 
 print("Extracting validation embeddings...")
-X_val, y_val = extract_embeddings(dataset["validation"], 8)
+X_val, y_val = extract_embeddings(dataset["validation"], 1)
 
 print("Extracting test embeddings...")
-X_test, y_test = extract_embeddings(dataset["test"], 8)
+X_test, y_test = extract_embeddings(dataset["test"], 1)
 
 
 print("Train:", X_dat.shape, y_dat.shape)
@@ -88,6 +87,6 @@ print("Validation:", X_val.shape, y_val.shape)
 print("Test:", X_test.shape, y_test.shape)
 
 
-torch.save({"embeddings": X_dat, "labels": y_dat}, "train_layer8.pt")
-torch.save({"embeddings": X_val, "labels": y_val}, "validation_layer8.pt")
-torch.save({"embeddings": X_test, "labels": y_test}, "test_layer8.pt")
+torch.save({"embeddings": X_dat, "labels": y_dat}, "train_layer1.pt")
+torch.save({"embeddings": X_val, "labels": y_val}, "validation_layer1.pt")
+torch.save({"embeddings": X_test, "labels": y_test}, "test_layer1.pt")

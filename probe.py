@@ -1,4 +1,4 @@
-
+from sklearn.metrics import f1_score
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
@@ -172,6 +172,72 @@ def plot_training(train_losses, train_accuracies, val_accuracies):
     plt.close()
 
 
+
+# Show incorrectly classified POS tags
+
+# Show incorrectly classified POS tags and evaluation metrics
+def show_errors(probe, X_val, y_val, id_to_pos, max_errors=30):
+
+    device = next(probe.parameters()).device
+    probe.eval()
+
+    errors = []
+    predictions = []
+    true_labels = []
+
+    with torch.no_grad():
+        for i in range(len(X_val)):
+            x = X_val[i].unsqueeze(0).to(device)
+
+            prediction = probe(x).argmax(1).item()
+            true_label = y_val[i].item()
+
+            predictions.append(prediction)
+            true_labels.append(true_label)
+
+            if prediction != true_label:
+                errors.append((i, true_label, prediction))
+
+    # Evaluation metrics
+    accuracy = 1 - len(errors) / len(y_val)
+    macro_f1 = f1_score(true_labels, predictions, average="macro", zero_division=0)
+    weighted_f1 = f1_score(true_labels, predictions, average="weighted", zero_division=0)
+
+    print("\n" + "=" * 60)
+    print("PROBE EVALUATION - VALIDATION SET")
+    print("=" * 60)
+
+    print(f"Accuracy:    {accuracy:.4f}")
+    print(f"Macro F1:    {macro_f1:.4f}")
+    print(f"Weighted F1: {weighted_f1:.4f}")
+
+    print("\n" + "=" * 60)
+    print("CLASSIFICATION ERRORS - VALIDATION SET")
+    print("=" * 60)
+
+    print(f"Total errors: {len(errors)}")
+    print(f"Total words: {len(y_val)}")
+
+    print(f"\nFirst {min(max_errors, len(errors))} errors:")
+    print(f"{'Index':<10}{'True POS':<15}{'Predicted POS':<15}")
+    print("-" * 40)
+
+    for i, true_label, prediction in errors[:max_errors]:
+        print(f"{i:<10}{id_to_pos[true_label]:<15}{id_to_pos[prediction]:<15}")
+
+
+
+
+POS_TAGS = [
+    "ADJ", "ADP", "ADV", "AUX", "CCONJ", "DET",
+    "INTJ", "NOUN", "NUM", "PART", "PRON",
+    "PROPN", "PUNCT", "SCONJ", "SYM", "VERB", "X"
+]
+
+id_to_pos = {i: tag for i, tag in enumerate(POS_TAGS)}
+
+
+
 # Load layer 12 embeddings
 train_data = torch.load("train_layer8.pt", weights_only=True)
 val_data = torch.load("validation_layer8.pt", weights_only=True)
@@ -184,3 +250,6 @@ y_val = val_data["labels"]
 
 # Train the probe
 probe = train_probe(X_train, y_train, X_val, y_val, 17)
+
+# Analyze classification errors on validation set
+show_errors(probe, X_val, y_val, id_to_pos)

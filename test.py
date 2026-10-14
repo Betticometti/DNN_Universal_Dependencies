@@ -17,3 +17,13 @@ print("2 + 3 =", 2 + 3)
 
 for i in range(5):
     print("Iteration", i + 1)
+
+
+
+import torch
+
+data = torch.load("test_layer12.pt", weights_only=True)
+
+print(data["embeddings"].shape)
+print(data["labels"].shape)
+print(data["labels"][:10])    
