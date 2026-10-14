@@ -1,5 +1,19 @@
+
 import torch
 from test_bert import dataset, tokenizer, model, device
+
+model.eval()
+
+POS_TAGS = [
+    "ADJ", "ADP", "ADV", "AUX", "CCONJ", "DET",
+    "INTJ", "NOUN", "NUM", "PART", "PRON",
+    "PROPN", "PUNCT", "SCONJ", "SYM", "VERB", "X"
+]
+
+pos_to_id = {
+    tag: i for i, tag in enumerate(POS_TAGS)
+}
+
 
 def extract_embeddings(data, layer):
 
@@ -44,20 +58,36 @@ def extract_embeddings(data, layer):
                 word_vector = torch.stack(subtoken_vectors).mean(dim=0)
 
                 sentence_embeddings.append(word_vector.cpu())
-                sentence_labels.append(pos_tags[word_index])
+                sentence_labels.append(pos_to_id[pos_tags[word_index]])
 
         embeddings.append(torch.stack(sentence_embeddings))
         labels.append(sentence_labels)
 
-    return embeddings, labels
+    X = torch.cat(embeddings, dim=0)
+
+    y = torch.tensor(
+        [label for sentence in labels for label in sentence],
+        dtype=torch.long
+    )
+
+    return X, y
 
 
-# Test on the first three training sentences
-X, y = extract_embeddings(
-    dataset["train"][:3],
-    2
-)
+print("Extracting training embeddings...")
+X_dat, y_dat = extract_embeddings(dataset["train"], 8)
 
-print("Word:", dataset["train"][2][1]["form"])
-print("Label:", y[2][1])
-print("Embedding:", X[2][1])
+print("Extracting validation embeddings...")
+X_val, y_val = extract_embeddings(dataset["validation"], 8)
+
+print("Extracting test embeddings...")
+X_test, y_test = extract_embeddings(dataset["test"], 8)
+
+
+print("Train:", X_dat.shape, y_dat.shape)
+print("Validation:", X_val.shape, y_val.shape)
+print("Test:", X_test.shape, y_test.shape)
+
+
+torch.save({"embeddings": X_dat, "labels": y_dat}, "train_layer8.pt")
+torch.save({"embeddings": X_val, "labels": y_val}, "validation_layer8.pt")
+torch.save({"embeddings": X_test, "labels": y_test}, "test_layer8.pt")
