@@ -99,16 +99,13 @@ def extract_and_save_layer(dataset_split, split_name, max_samples=None):
             word_ids = inputs.word_ids()
             inputs = {k: v.to(device) for k, v in inputs.items()}
             print(f"inputs: {inputs}")
-            # Passaggio nel modello
+
             outputs = model(**inputs)
             print(f"outputs: {outputs}")
             
-            # outputs.hidden_states è una tupla di 13 tensori:
-            # [0] = embeddings iniziali, [1...12] = output dei 12 layer del transformer
             all_hidden_states = outputs.hidden_states
             print(f"all_hidden_states: {all_hidden_states}")
             
-            # Non salvare mai i tensori sulla GPU, o finirai la memoria di Gorina4
             target_layer_tensor = all_hidden_states[TARGET_LAYER].cpu()
             print(f"target_layer_tensor: {target_layer_tensor}")
             
