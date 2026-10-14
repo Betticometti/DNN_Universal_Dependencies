@@ -68,7 +68,7 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 model = AutoModel.from_pretrained(MODEL_NAME, output_hidden_states=True) # 
 model.to(device) # directly on gpu
-model.eval() # set model to eval mode (disable dropout etc.)
+model.eval() # set model to eval mode (disable dropout...)
 
 # ==========================================
 # Extraction Function
@@ -125,8 +125,8 @@ def extract_and_save_layer(dataset_split, split_name, max_samples=None):
             print(f"data_to_save: {data_to_save}")
             torch.save(data_to_save, file_path)
             
-            if i % 500 == 0:
-                print(f"Elaborata frase {i} - Salvata in: {file_path}")
+            
+            print(f"Elaborata frase {i} - Salvata in: {file_path}")
 
 # ==========================================
 # Run
