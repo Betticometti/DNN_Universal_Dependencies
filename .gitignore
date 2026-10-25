@@ -11,6 +11,8 @@ __pycache__/
 
 # Embeddings folder
 embeddings/
+control_embeddings/
+accuracy/
 
 # Plot folder
 plots/

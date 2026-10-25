@@ -6,7 +6,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 import matplotlib.pyplot as plt
 
-LAYER_NUMBER = 1
+LAYER_NUMBER = 2
+CONTROL_TASK = True 
 
 torch.manual_seed(42)
 
@@ -65,6 +66,19 @@ def evaluate_probe(probe, loader, device):
 
     return correct / total
 
+# Save validation accuracy
+def save_accuracy(accuracy):
+
+    os.makedirs("accuracy", exist_ok=True)
+
+    if CONTROL_TASK:
+        file_name = f"accuracy/control_layer{LAYER_NUMBER}.pt"
+    else:
+        file_name = f"accuracy/pos_layer{LAYER_NUMBER}.pt"
+
+    torch.save({"validation_accuracy": accuracy}, file_name)
+
+    print(f"Accuracy saved: {file_name}")
 
 # Train the probe using the training and validation datasets
 def train_probe(X_train, y_train, X_val, y_val, num_classes):
@@ -138,6 +152,7 @@ def train_probe(X_train, y_train, X_val, y_val, num_classes):
 
     print(f"Best validation accuracy: {best_val:.4f}")
     plot_training(train_losses, train_accuracies, val_accuracies)
+    save_accuracy(best_val)
 
     # Save the trained probe
     # torch.save(probe.state_dict(), "probe_layer12.pt")
@@ -172,9 +187,14 @@ def plot_training(train_losses, train_accuracies, val_accuracies):
     plt.grid(True)
 
     plt.tight_layout()
-    if not os.path.exists("plots"):
-        os.makedirs("plots")
-    plt.savefig(f"plots/probe_layer{LAYER_NUMBER}_training.png")
+    if CONTROL_TASK:
+        plot_dir = "plots/control_task"
+    else:
+        plot_dir = "plots"
+
+    os.makedirs(plot_dir, exist_ok=True)
+
+    plt.savefig(f"{plot_dir}/probe_layer{LAYER_NUMBER}_training.png")
     plt.close()
 
 
@@ -244,9 +264,21 @@ id_to_pos = {i: tag for i, tag in enumerate(POS_TAGS)}
 
 
 
-# Load layer 12 embeddings
-train_data = torch.load(f"embeddings/train_layer{LAYER_NUMBER}.pt", weights_only=True)
-val_data = torch.load(f"embeddings/validation_layer{LAYER_NUMBER}.pt", weights_only=True)
+# Load embeddings
+if CONTROL_TASK:
+    data_dir = "control_embeddings"
+else:
+    data_dir = "embeddings"
+
+train_data = torch.load(
+    f"{data_dir}/train_layer{LAYER_NUMBER}.pt",
+    weights_only=True
+)
+
+val_data = torch.load(
+    f"{data_dir}/validation_layer{LAYER_NUMBER}.pt",
+    weights_only=True
+)
 
 X_train = train_data["embeddings"]
 y_train = train_data["labels"]
