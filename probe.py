@@ -347,8 +347,8 @@ POS_TAGS = [
 
 id_to_pos = {i: tag for i, tag in enumerate(POS_TAGS)}
 
-
-# Load embeddings
+# single run of training and evaluation for a specific layer and task
+""" # Load embeddings
 if CONTROL_TASK:
     data_dir = "control_embeddings"
 else:
@@ -389,4 +389,72 @@ show_errors(probe, X_val, y_val, id_to_pos, "validation")
 show_errors(probe, X_test, y_test, id_to_pos, "test")
 
 # Plot confusion matrix on test set
-plot_confusion_matrix(probe, X_test, y_test, POS_TAGS)
+plot_confusion_matrix(probe, X_test, y_test, POS_TAGS) """
+
+
+def run_all_training_eval_tests():
+
+    global LAYER_NUMBER, CONTROL_TASK
+
+    for i in range(1, 13):
+        if not os.path.exists(f"embeddings/train_layer{i}.pt") \
+            or not os.path.exists(f"embeddings/validation_layer{i}.pt") \
+            or not os.path.exists(f"embeddings/test_layer{i}.pt") \
+            or not os.path.exists(f"control_embeddings/train_layer{i}.pt") \
+            or not os.path.exists(f"control_embeddings/validation_layer{i}.pt") \
+            or not os.path.exists(f"control_embeddings/test_layer{i}.pt") \
+            :
+            print(f"Missing embeddings for layer {i} - please run extract_embeddings.py and control_task.py first.")
+            exit(1)
+
+        LAYER_NUMBER = i
+        
+        for CONTROL_TASK in [False, True]:
+
+            # Load embeddings
+            if CONTROL_TASK:
+                data_dir = "control_embeddings"
+                print(f"\n\nRunning probe for control task - layer {LAYER_NUMBER}")
+            else:
+                print(f"\n\nRunning probe for POS classification - layer {LAYER_NUMBER}")
+                data_dir = "embeddings"
+
+            train_data = torch.load(
+                f"{data_dir}/train_layer{LAYER_NUMBER}.pt",
+                weights_only=True
+            )
+
+            val_data = torch.load(
+                f"{data_dir}/validation_layer{LAYER_NUMBER}.pt",
+                weights_only=True
+            )
+
+            test_data = torch.load(
+                f"{data_dir}/test_layer{LAYER_NUMBER}.pt",
+                weights_only=True
+            )
+
+            X_train = train_data["embeddings"]
+            y_train = train_data["labels"]
+
+            X_val = val_data["embeddings"]
+            y_val = val_data["labels"]
+
+            X_test = test_data["embeddings"]
+            y_test = test_data["labels"]
+
+            # Train the probe
+            probe = train_probe(X_train, y_train, X_val, y_val, 17)
+
+            # Analyze classification errors on validation set
+            show_errors(probe, X_val, y_val, id_to_pos, "validation")
+
+            # Analyze classification errors on test set
+            show_errors(probe, X_test, y_test, id_to_pos, "test")
+
+            # Plot confusion matrix on test set
+            plot_confusion_matrix(probe, X_test, y_test, POS_TAGS)
+
+    return
+
+run_all_training_eval_tests()

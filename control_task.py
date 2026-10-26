@@ -5,7 +5,7 @@ import torch
 from collections import Counter
 from conllu import parse_incr
 
-LAYER_NUMBER = 4
+LAYER_NUMBER = 12
 
 os.makedirs("control_embeddings", exist_ok=True)
 
