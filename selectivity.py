@@ -1,7 +1,7 @@
 
 import torch
 
-LAYER_NUMBER = 2
+LAYER_NUMBER = 1
 
 # Calculate selectivity
 def calculate_selectivity():

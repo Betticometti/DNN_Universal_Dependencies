@@ -2,7 +2,7 @@ import torch
 from test_bert import dataset, tokenizer, model, device
 import os
 
-LAYER_NUMBER = 1
+LAYER_NUMBER = 9
 
 os.makedirs("embeddings", exist_ok=True)
 

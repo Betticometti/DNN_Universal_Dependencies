@@ -2,11 +2,11 @@
 import torch
 
 # Load saved embeddings
-data = torch.load("train_layer2.pt", weights_only=True)
+#data = torch.load("embeddings/train_layer9.pt", weights_only=True)
+data = torch.load("control_embeddings/train_layer2.pt", weights_only=True)
 
-# Check dimensions
-print("Embeddings shape:", data["embeddings"].shape)
-print("Labels shape:", data["labels"].shape)
+# Show information about the loaded data
+print("Loaded embeddings from file: control_embeddings/train_layer2.pt")
 
 # Show the first embedding
 print("\nFirst embedding:")

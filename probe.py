@@ -5,9 +5,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
-LAYER_NUMBER = 2
-CONTROL_TASK = True 
+LAYER_NUMBER = 1
+CONTROL_TASK = False
 
 torch.manual_seed(42)
 
@@ -38,7 +39,7 @@ BATCH_SIZE = 128
 
 # Linear probe for POS classification
 class Probe(nn.Module):
-    #768 e 17
+
     def __init__(self, input_dim, num_classes):
         super().__init__()
         self.fc = nn.Linear(input_dim, num_classes)
@@ -66,6 +67,7 @@ def evaluate_probe(probe, loader, device):
 
     return correct / total
 
+
 # Save validation accuracy
 def save_accuracy(accuracy):
 
@@ -79,6 +81,7 @@ def save_accuracy(accuracy):
     torch.save({"validation_accuracy": accuracy}, file_name)
 
     print(f"Accuracy saved: {file_name}")
+
 
 # Train the probe using the training and validation datasets
 def train_probe(X_train, y_train, X_val, y_val, num_classes):
@@ -148,14 +151,13 @@ def train_probe(X_train, y_train, X_val, y_val, num_classes):
               f"Train accuracy: {train_acc:.4f} "
               f"Validation accuracy: {val_acc:.4f}")
 
+    # Restore the best probe based on validation accuracy
     probe.load_state_dict(best_state)
 
     print(f"Best validation accuracy: {best_val:.4f}")
+
     plot_training(train_losses, train_accuracies, val_accuracies)
     save_accuracy(best_val)
-
-    # Save the trained probe
-    # torch.save(probe.state_dict(), "probe_layer12.pt")
 
     return probe
 
@@ -187,6 +189,7 @@ def plot_training(train_losses, train_accuracies, val_accuracies):
     plt.grid(True)
 
     plt.tight_layout()
+
     if CONTROL_TASK:
         plot_dir = "plots/control_task"
     else:
@@ -198,39 +201,53 @@ def plot_training(train_losses, train_accuracies, val_accuracies):
     plt.close()
 
 
-
-# Show incorrectly classified POS tags
-
-# Show incorrectly classified POS tags and evaluation metrics
-def show_errors(probe, X_val, y_val, id_to_pos, max_errors=30):
+# Show incorrectly classified labels and evaluation metrics
+def show_errors(probe, X, y, id_to_pos, dataset_name, max_errors=30):
 
     device = next(probe.parameters()).device
     probe.eval()
+
+    loader = DataLoader(
+        TensorDataset(X, y),
+        batch_size=BATCH_SIZE,
+        shuffle=False
+    )
 
     errors = []
     predictions = []
     true_labels = []
 
+    index = 0
+
     with torch.no_grad():
-        for i in range(len(X_val)):
-            x = X_val[i].unsqueeze(0).to(device)
+        for x_batch, y_batch in loader:
 
-            prediction = probe(x).argmax(1).item()
-            true_label = y_val[i].item()
+            outputs = probe(x_batch.to(device))
+            batch_predictions = outputs.argmax(1).cpu().tolist()
+            batch_labels = y_batch.tolist()
 
-            predictions.append(prediction)
-            true_labels.append(true_label)
+            predictions.extend(batch_predictions)
+            true_labels.extend(batch_labels)
 
-            if prediction != true_label:
-                errors.append((i, true_label, prediction))
+            for true_label, prediction in zip(batch_labels, batch_predictions):
+                if prediction != true_label:
+                    errors.append((index, true_label, prediction))
+
+                index += 1
 
     # Evaluation metrics
-    accuracy = 1 - len(errors) / len(y_val)
-    macro_f1 = f1_score(true_labels, predictions, average="macro", zero_division=0)
-    weighted_f1 = f1_score(true_labels, predictions, average="weighted", zero_division=0)
+    accuracy = 1 - len(errors) / len(y)
+    macro_f1 = f1_score(
+        true_labels, predictions,
+        average="macro", zero_division=0
+    )
+    weighted_f1 = f1_score(
+        true_labels, predictions,
+        average="weighted", zero_division=0
+    )
 
     print("\n" + "=" * 60)
-    print("PROBE EVALUATION - VALIDATION SET")
+    print(f"PROBE EVALUATION - {dataset_name.upper()} SET")
     print("=" * 60)
 
     print(f"Accuracy:    {accuracy:.4f}")
@@ -238,22 +255,90 @@ def show_errors(probe, X_val, y_val, id_to_pos, max_errors=30):
     print(f"Weighted F1: {weighted_f1:.4f}")
 
     print("\n" + "=" * 60)
-    print("CLASSIFICATION ERRORS - VALIDATION SET")
+    print(f"CLASSIFICATION ERRORS - {dataset_name.upper()} SET")
     print("=" * 60)
 
     print(f"Total errors: {len(errors)}")
-    print(f"Total words: {len(y_val)}")
+    print(f"Total words: {len(y)}")
 
     print(f"\nFirst {min(max_errors, len(errors))} errors:")
-    print(f"{'Index':<10}{'True POS':<15}{'Predicted POS':<15}")
+    print(f"{'Index':<10}{'True label':<15}{'Predicted label':<15}")
     print("-" * 40)
 
     for i, true_label, prediction in errors[:max_errors]:
-        print(f"{i:<10}{id_to_pos[true_label]:<15}{id_to_pos[prediction]:<15}")
+        print(
+            f"{i:<10}"
+            f"{id_to_pos[true_label]:<15}"
+            f"{id_to_pos[prediction]:<15}"
+        )
 
 
+# Plot confusion matrix for the test set
+def plot_confusion_matrix(probe, X_test, y_test, pos_tags):
+
+    device = next(probe.parameters()).device
+    probe.eval()
+
+    test_loader = DataLoader(
+        TensorDataset(X_test, y_test),
+        batch_size=BATCH_SIZE,
+        shuffle=False
+    )
+
+    predictions = []
+    true_labels = []
+
+    with torch.no_grad():
+        for x, y in test_loader:
+            x = x.to(device)
+
+            outputs = probe(x)
+            predicted = outputs.argmax(1)
+
+            predictions.extend(predicted.cpu().tolist())
+            true_labels.extend(y.tolist())
+
+    # Compute confusion matrix
+    cm = confusion_matrix(
+        true_labels,
+        predictions,
+        labels=range(len(pos_tags))
+    )
+
+    # Plot confusion matrix
+    fig, ax = plt.subplots(figsize=(12, 10))
+
+    disp = ConfusionMatrixDisplay(
+        confusion_matrix=cm,
+        display_labels=pos_tags
+    )
+
+    disp.plot(
+        ax=ax,
+        cmap="Blues",
+        xticks_rotation=45,
+        values_format="d"
+    )
+
+    plt.title(f"Confusion Matrix - Layer {LAYER_NUMBER} - Test Set")
+    plt.tight_layout()
+
+    # Save plot
+    if CONTROL_TASK:
+        plot_dir = "plots/control_task"
+    else:
+        plot_dir = "plots"
+
+    os.makedirs(plot_dir, exist_ok=True)
+
+    plt.savefig(
+        f"{plot_dir}/confusion_matrix_layer{LAYER_NUMBER}.png"
+    )
+
+    plt.close()
 
 
+# POS tags
 POS_TAGS = [
     "ADJ", "ADP", "ADV", "AUX", "CCONJ", "DET",
     "INTJ", "NOUN", "NUM", "PART", "PRON",
@@ -261,7 +346,6 @@ POS_TAGS = [
 ]
 
 id_to_pos = {i: tag for i, tag in enumerate(POS_TAGS)}
-
 
 
 # Load embeddings
@@ -280,14 +364,29 @@ val_data = torch.load(
     weights_only=True
 )
 
+test_data = torch.load(
+    f"{data_dir}/test_layer{LAYER_NUMBER}.pt",
+    weights_only=True
+)
+
 X_train = train_data["embeddings"]
 y_train = train_data["labels"]
 
 X_val = val_data["embeddings"]
 y_val = val_data["labels"]
 
+X_test = test_data["embeddings"]
+y_test = test_data["labels"]
+
+
 # Train the probe
 probe = train_probe(X_train, y_train, X_val, y_val, 17)
 
 # Analyze classification errors on validation set
-show_errors(probe, X_val, y_val, id_to_pos)
+show_errors(probe, X_val, y_val, id_to_pos, "validation")
+
+# Analyze classification errors on test set
+show_errors(probe, X_test, y_test, id_to_pos, "test")
+
+# Plot confusion matrix on test set
+plot_confusion_matrix(probe, X_test, y_test, POS_TAGS)
