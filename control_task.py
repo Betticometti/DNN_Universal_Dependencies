@@ -140,7 +140,7 @@ from conllu import parse_incr
 
 os.makedirs("control_embeddings", exist_ok=True)
 
-# Load dataset
+# Load sentences and POS tags from a CoNLL-U file
 def load_data(path):
     with open(path, "r", encoding="utf-8") as file:
         return list(parse_incr(file))
@@ -166,16 +166,13 @@ pos_to_id = {tag: i for i, tag in enumerate(POS_TAGS)}
 
 DICTIONARY_PATH = "control_embeddings/random_dictionary.pt"
 
-
-# Create random POS labels for each word
+# Assign a consistent random POS label to each unique word
 def create_random_dictionary():
     if os.path.exists(DICTIONARY_PATH):
         print("Random dictionary already exists.")
         return
 
     random.seed(42)
-
-    # Count POS tags in the training set
     pos_counts = Counter()
 
     for sentence in dataset["train"]:
@@ -184,8 +181,6 @@ def create_random_dictionary():
                 pos_counts[token["upos"]] += 1
 
     weights = [pos_counts[tag] for tag in POS_TAGS]
-
-    # Assign random labels to each word
     random_dictionary = {}
 
     for split in dataset:
@@ -205,8 +200,7 @@ def create_random_dictionary():
     print("Random dictionary saved.")
     print("Unique words:", len(random_dictionary))
 
-
-# Create a control task file using the saved dictionary
+# Replace original POS labels with random labels while keeping the same embeddings
 def create_control_file(file_path):
     random_dictionary = torch.load(
         DICTIONARY_PATH, weights_only=True
@@ -237,7 +231,6 @@ def create_control_file(file_path):
     assert len(random_labels) == len(data["embeddings"])
     assert torch.equal(original_labels, data["labels"])
 
-    # Save embeddings with random labels
     control_data = {
         "embeddings": data["embeddings"],
         "labels": random_labels
@@ -247,8 +240,6 @@ def create_control_file(file_path):
     torch.save(control_data, output_path)
     print("Control file saved:", output_path)
 
-
-# Run
 create_random_dictionary()
 
 # Loop through layers 1 to 12

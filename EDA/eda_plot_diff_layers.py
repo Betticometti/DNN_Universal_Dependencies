@@ -4,20 +4,14 @@ import glob
 import matplotlib.pyplot as plt
 import numpy as np
 
-# ==========================================
-# 1. Configurazione
-# ==========================================
 SPLIT = "train"
 SENTENCE = 0  
-BASE_DIR = "../target_layers"
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent.parent / "target_layers"
+AVAILABLE_LAYERS = [1, 2] 
 
-# Definisci quali layer hai salvato e vuoi confrontare
-# (Se hai salvato solo i layer 1, 2, 3 e 4, metti quelli)
-AVAILABLE_LAYERS = [1, 2, 3, 4] 
 
-# ==========================================
-# 2. Funzione per calcolare la statistica (Norma media)
-# ==========================================
+# Calculate the average L2 norm of embeddings for a selected layer
 def calculate_layer_statistic(layer_num, sentence_id=None):
     """
     Carica i dati del layer e calcola una metrica numerica (es. la media della 
@@ -61,14 +55,13 @@ def calculate_layer_statistic(layer_num, sentence_id=None):
     # Se stiamo processando più frasi, facciamo la media finale di tutte le frasi
     return np.mean(norms) if norms else None
 
-# ==========================================
-# 3. Estrazione dati
-# ==========================================
 print(f"--- Avvio Analisi per {f'Frase {SENTENCE}' if SENTENCE is not None else 'Tutte le Frasi'} ---")
 
 layer_values = []
 valid_layers = []
 
+
+# Compare embedding magnitudes across the selected layers
 for layer in AVAILABLE_LAYERS:
     print(f"Elaborazione Layer {layer}...")
     val = calculate_layer_statistic(layer, SENTENCE)
@@ -76,13 +69,10 @@ for layer in AVAILABLE_LAYERS:
         layer_values.append(val)
         valid_layers.append(layer)
 
-# ==========================================
-# 4. Creazione del Plot
-# ==========================================
+
 if valid_layers:
     plt.figure(figsize=(10, 6))
     
-    # Crea un grafico a linee con dei punti (marker='o')
     plt.plot(valid_layers, layer_values, marker='o', linestyle='-', color='b', linewidth=2)
     
     title = f"Confronto Intensità degli Embeddings per i Layer BERT"
@@ -95,11 +85,9 @@ if valid_layers:
     plt.xlabel("Indice del Layer", fontsize=12)
     plt.ylabel("Norma L2 Media (Intensità Vettore)", fontsize=12)
     
-    # Imposta i "tick" dell'asse X esattamente sui layer che hai analizzato
     plt.xticks(valid_layers)
     plt.grid(True, linestyle='--', alpha=0.7)
     
-    # Salva l'immagine invece di provare a mostrarla a schermo (fondamentale su server)
     plot_path = f"confronto_layer_{'frase_'+str(SENTENCE) if SENTENCE is not None else 'tutte'}.png"
     plt.savefig(plot_path)
     print(f"\nGrafico salvato con successo come: {plot_path}")

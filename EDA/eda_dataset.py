@@ -1,4 +1,3 @@
-
 from collections import Counter
 from pathlib import Path
 from conllu import parse_incr
@@ -10,9 +9,8 @@ DATA_FILES = {
     "Test": DATA_DIR / "en_ewt-ud-test.conllu",
 }
 
-
+# Count sentences, words, and POS tags in a dataset split
 def analyze_dataset(path):
-    """Count sentences, actual words, and universal POS tags in a CoNLL-U file."""
     sentence_count = 0
     word_count = 0
     pos_counts = Counter()
@@ -24,40 +22,50 @@ def analyze_dataset(path):
                 # Skip multiword-token ranges and empty nodes.
                 if not isinstance(token["id"], int):
                     continue
+
                 word_count += 1
+
                 if token["upos"] is not None:
                     pos_counts[token["upos"]] += 1
 
     return sentence_count, word_count, pos_counts
 
 
+# Analyze dataset sizes and POS tag distributions for all splits
 def main():
-    
+
     results = {}
+
     for split, path in DATA_FILES.items():
         if not path.is_file():
             raise FileNotFoundError(f"Dataset file not found: {path}")
+
         results[split] = analyze_dataset(path)
 
     print("\n1. DATASET SIZE")
     print("-" * 60)
     print(f"{'Split':<15}{'Sentences':>15}{'Words':>15}")
+
     for split, (sentences, words, _) in results.items():
         print(f"{split:<15}{sentences:>15,}{words:>15,}")
 
-    train_counts = results["Train"][2]
-    print("\n2. UNIVERSAL POS TAGS (TRAINING SET)")
-    print("-" * 60)
-    print(f"Number of POS tags: {len(train_counts)}")
-    print("POS tags:", ", ".join(sorted(train_counts)))
+    # Analyze POS tags and their distribution for each split
+    for split, (sentences, words, pos_counts) in results.items():
 
-    print("\n3. POS TAG DISTRIBUTION (TRAINING SET)")
-    print("-" * 60)
-    print(f"{'POS tag':<15}{'Count':>15}{'Percentage':>15}")
-    total = sum(train_counts.values())
-    for tag, count in train_counts.most_common():
-        percentage = 100 * count / total if total else 0
-        print(f"{tag:<15}{count:>15,}{percentage:>14.2f}%")
+        print(f"\n2. UNIVERSAL POS TAGS ({split.upper()} SET)")
+        print("-" * 60)
+        print(f"Number of POS tags: {len(pos_counts)}")
+        print("POS tags:", ", ".join(sorted(pos_counts)))
+
+        print(f"\n3. POS TAG DISTRIBUTION ({split.upper()} SET)")
+        print("-" * 60)
+        print(f"{'POS tag':<15}{'Count':>15}{'Percentage':>15}")
+
+        total = sum(pos_counts.values())
+
+        for tag, count in pos_counts.most_common():
+            percentage = 100 * count / total if total else 0
+            print(f"{tag:<15}{count:>15,}{percentage:>14.2f}%")
 
 
 if __name__ == "__main__":

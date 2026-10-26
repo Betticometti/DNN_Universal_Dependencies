@@ -4,7 +4,6 @@ from collections import Counter
 from conllu import parse_incr
 from transformers import AutoTokenizer
 
-# Load BERT tokenizer (not the model)
 tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-uncased")
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -15,12 +14,12 @@ DATA_FILES = {
     "Test": DATA_DIR / "en_ewt-ud-test.conllu",
 }
 
-
+# Load sentences from a CoNLL-U dataset file
 def load_dataset(path):
     with path.open("r", encoding="utf-8") as file:
         return list(parse_incr(file))
 
-
+# Count words split into subtokens and analyze their POS tags
 def analyze_subwords(data):
     total_words = 0
     split_words = []
@@ -53,7 +52,7 @@ def analyze_subwords(data):
     for tag, count in split_pos.most_common():
         print(f"{tag:<10} {count:>6}")
 
-
+# Check tokenized sentence lengths and identify sequences exceeding 512 tokens
 def analyze_sentence_lengths(data, name):
     max_tokens = 0
     long_sentences = []
@@ -80,7 +79,7 @@ def analyze_sentence_lengths(data, name):
     print("Maximum sentence length:", max_tokens)
     print("Long sentences:", long_sentences)
 
-
+# Run subword and sentence length analysis on the dataset
 def main():
     datasets = {
         name: load_dataset(path)

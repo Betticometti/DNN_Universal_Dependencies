@@ -9,7 +9,7 @@ from conllu import parse_incr
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-# Load dataset
+# Load sentences and POS tags from a CoNLL-U dataset file
 def load_data(path):
     with open(path, "r", encoding="utf-8") as file:
         return list(parse_incr(file))
@@ -25,7 +25,6 @@ dataset = {
     for split, path in data_files.items()
 }
 
-# Check dataset
 print("Train sentences:", len(dataset["train"]))
 print("Validation sentences:", len(dataset["validation"]))
 print("Test sentences:", len(dataset["test"]))

@@ -117,7 +117,7 @@ pos_to_id = {
     tag: i for i, tag in enumerate(POS_TAGS)
 }
 
-
+# Extract word-level embeddings and POS labels from a selected BERT layer
 def extract_embeddings(data, layer):
     embeddings = []
     labels = []

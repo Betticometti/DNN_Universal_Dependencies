@@ -1,27 +1,20 @@
-# ==========================================
-# Utilities
-# ==========================================
-
 import os
 import torch
 
-# ==========================================
-# Gorina Environment
-# ==========================================
+# Inspect POS tags, word IDs, and BERT embeddings for a selected sentence and layer
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-# ==========================================
-# Loading Layer Data
-# ==========================================
-
 TARGET_LAYER = 2
 SPLIT = "train"
 SENTENCE = 0
 
-file_path = f"../target_layers/layer_{TARGET_LAYER}/{SPLIT}_sentence_{SENTENCE}.pt"
+from pathlib import Path
+
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+file_path = PROJECT_DIR / "target_layers" / f"layer_{TARGET_LAYER}" / f"{SPLIT}_sentence_{SENTENCE}.pt"
 data = torch.load(file_path, weights_only=False)
 
 print(f"\n --- OPENING FILE: {file_path} --- \n")

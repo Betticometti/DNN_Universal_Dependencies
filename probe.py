@@ -47,8 +47,7 @@ class Probe(nn.Module):
     def forward(self, x):
         return self.fc(x)
 
-
-# Evaluate classification accuracy
+# Calculate classification accuracy on a given dataset
 def evaluate_probe(probe, loader, device):
     probe.eval()
 
@@ -67,8 +66,7 @@ def evaluate_probe(probe, loader, device):
 
     return correct / total
 
-
-# Save validation accuracy
+# Save the best validation accuracy to a text file
 def save_accuracy(accuracy):
 
     os.makedirs("accuracy", exist_ok=True)
@@ -81,7 +79,7 @@ def save_accuracy(accuracy):
 
     print(f"Accuracy saved: {file_name}")
 
-# Train the probe using the training and validation datasets
+# Train the linear probe and restore the model with the best validation accuracy
 def train_probe(X_train, y_train, X_val, y_val, num_classes):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -159,8 +157,7 @@ def train_probe(X_train, y_train, X_val, y_val, num_classes):
 
     return probe
 
-
-# Plot training results
+# Plot and save training loss, training accuracy, and validation accuracy
 def plot_training(train_losses, train_accuracies, val_accuracies):
 
     epochs = range(1, len(train_losses) + 1)
@@ -198,8 +195,7 @@ def plot_training(train_losses, train_accuracies, val_accuracies):
     plt.savefig(f"{plot_dir}/probe_layer{LAYER_NUMBER}_training.png")
     plt.close()
 
-
-# Show incorrectly classified labels and evaluation metrics
+# Evaluate accuracy and F1 scores and display classification errors
 def show_errors(probe, X, y, id_to_pos, dataset_name, max_errors=30):
 
     device = next(probe.parameters()).device
@@ -281,8 +277,7 @@ def show_errors(probe, X, y, id_to_pos, dataset_name, max_errors=30):
             f"{id_to_pos[prediction]:<15}"
         )
 
-
-# Plot confusion matrix for the test set
+# Generate and save the confusion matrix for the test set
 def plot_confusion_matrix(probe, X_test, y_test, pos_tags):
 
     device = next(probe.parameters()).device
@@ -346,8 +341,6 @@ def plot_confusion_matrix(probe, X_test, y_test, pos_tags):
 
     plt.close()
 
-
-# POS tags
 POS_TAGS = [
     "ADJ", "ADP", "ADV", "AUX", "CCONJ", "DET",
     "INTJ", "NOUN", "NUM", "PART", "PRON",
@@ -400,9 +393,8 @@ show_errors(probe, X_test, y_test, id_to_pos, "test")
 # Plot confusion matrix on test set
 plot_confusion_matrix(probe, X_test, y_test, POS_TAGS) """
 
-
+# Train and evaluate POS and control probes across all BERT layers
 def run_all_training_eval_tests():
-
     global LAYER_NUMBER, CONTROL_TASK
 
     for i in range(1, 13):
