@@ -73,15 +73,13 @@ def save_accuracy(accuracy):
 
     os.makedirs("accuracy", exist_ok=True)
 
-    if CONTROL_TASK:
-        file_name = f"accuracy/control_layer{LAYER_NUMBER}.pt"
-    else:
-        file_name = f"accuracy/pos_layer{LAYER_NUMBER}.pt"
+    task_name = "control" if CONTROL_TASK else "pos"
+    file_name = f"accuracy/{task_name}_layer{LAYER_NUMBER}.txt"
 
-    torch.save({"validation_accuracy": accuracy}, file_name)
+    with open(file_name, "w") as f:
+        f.write(f"Validation Accuracy: {accuracy:.4f}\n")
 
     print(f"Accuracy saved: {file_name}")
-
 
 # Train the probe using the training and validation datasets
 def train_probe(X_train, y_train, X_val, y_val, num_classes):
@@ -193,7 +191,7 @@ def plot_training(train_losses, train_accuracies, val_accuracies):
     if CONTROL_TASK:
         plot_dir = "plots/control_task"
     else:
-        plot_dir = "plots"
+        plot_dir = "plots/pos"
 
     os.makedirs(plot_dir, exist_ok=True)
 
@@ -245,6 +243,17 @@ def show_errors(probe, X, y, id_to_pos, dataset_name, max_errors=30):
         true_labels, predictions,
         average="weighted", zero_division=0
     )
+
+    # Save test results
+    if dataset_name == "test":
+
+        task_name = "control" if CONTROL_TASK else "pos"
+        file_name = f"accuracy/{task_name}_layer{LAYER_NUMBER}.txt"
+
+        with open(file_name, "a") as f:
+            f.write(f"Test Accuracy: {accuracy:.4f}\n")
+            f.write(f"Test Macro F1: {macro_f1:.4f}\n")
+            f.write(f"Test Weighted F1: {weighted_f1:.4f}\n")
 
     print("\n" + "=" * 60)
     print(f"PROBE EVALUATION - {dataset_name.upper()} SET")
@@ -327,7 +336,7 @@ def plot_confusion_matrix(probe, X_test, y_test, pos_tags):
     if CONTROL_TASK:
         plot_dir = "plots/control_task"
     else:
-        plot_dir = "plots"
+        plot_dir = "plots/pos"
 
     os.makedirs(plot_dir, exist_ok=True)
 
@@ -408,7 +417,7 @@ def run_all_training_eval_tests():
             exit(1)
 
         LAYER_NUMBER = i
-        
+
         for CONTROL_TASK in [False, True]:
 
             # Load embeddings
