@@ -9,6 +9,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 LAYER_NUMBER = 1
 CONTROL_TASK = False
+PROBE_TYPE = "mlp" # "mlp" "linear"
 
 torch.manual_seed(42)
 
@@ -37,15 +38,26 @@ BATCH_SIZE = 128
 # -------------------------------------------------------------------------------
 
 
-# Linear probe for POS classification
+# Probe for POS classification (linear or MLP)
 class Probe(nn.Module):
-
-    def __init__(self, input_dim, num_classes):
+    # hidden_dim was 128 before, but hewitt and liang talked about having it way lower
+    def __init__(self, input_dim, num_classes, probe_type="linear", hidden_dim=10):
         super().__init__()
-        self.fc = nn.Linear(input_dim, num_classes)
+        self.probe_type = probe_type
+        
+        if self.probe_type == "linear":
+            self.model = nn.Linear(input_dim, num_classes)
+        elif self.probe_type == "mlp":
+            self.model = nn.Sequential(
+                nn.Linear(input_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, num_classes)
+            )
+        else:
+            raise ValueError("probe_type must be 'linear' or 'mlp'")
 
     def forward(self, x):
-        return self.fc(x)
+        return self.model(x)
 
 # Calculate classification accuracy on a given dataset
 def evaluate_probe(probe, loader, device):
@@ -68,11 +80,13 @@ def evaluate_probe(probe, loader, device):
 
 # Save the best validation accuracy to a text file
 def save_accuracy(accuracy):
-
-    os.makedirs("accuracy", exist_ok=True)
-
     task_name = "control" if CONTROL_TASK else "pos"
-    file_name = f"accuracy/{task_name}_layer{LAYER_NUMBER}.txt"
+    folder_path = f"accuracy/{PROBE_TYPE}/{task_name}"
+    
+    # Crea l'intero percorso fino a "control" o "pos" in automatico
+    os.makedirs(folder_path, exist_ok=True)
+
+    file_name = f"{folder_path}/{PROBE_TYPE}_{task_name}_layer{LAYER_NUMBER}.txt"
 
     with open(file_name, "w") as f:
         f.write(f"Validation Accuracy: {accuracy:.4f}\n")
@@ -96,7 +110,7 @@ def train_probe(X_train, y_train, X_val, y_val, num_classes):
         shuffle=False
     )
 
-    probe = Probe(X_train.shape[1], num_classes).to(device)
+    probe = Probe(X_train.shape[1], num_classes, probe_type=PROBE_TYPE).to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(probe.parameters(), lr=LR)
@@ -169,7 +183,7 @@ def plot_training(train_losses, train_accuracies, val_accuracies):
     plt.plot(epochs, train_losses, label="Training loss")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.title("Training Loss")
+    plt.title(f"Training Loss ({PROBE_TYPE})")
     plt.legend()
     plt.grid(True)
 
@@ -179,20 +193,17 @@ def plot_training(train_losses, train_accuracies, val_accuracies):
     plt.plot(epochs, val_accuracies, label="Validation accuracy")
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
-    plt.title("Training and Validation Accuracy")
+    plt.title(f"Training and Validation Accuracy ({PROBE_TYPE})")
     plt.legend()
     plt.grid(True)
 
     plt.tight_layout()
 
-    if CONTROL_TASK:
-        plot_dir = "plots/control_task"
-    else:
-        plot_dir = "plots/pos"
+    task_name = "control" if CONTROL_TASK else "pos"
+    plot_dir = f"plots/{PROBE_TYPE}/{task_name}"
 
     os.makedirs(plot_dir, exist_ok=True)
-
-    plt.savefig(f"{plot_dir}/probe_layer{LAYER_NUMBER}_training.png")
+    plt.savefig(f"{plot_dir}/probe_{PROBE_TYPE}_layer{LAYER_NUMBER}_training.png")
     plt.close()
 
 # Evaluate accuracy and F1 scores and display classification errors
@@ -244,7 +255,8 @@ def show_errors(probe, X, y, id_to_pos, dataset_name, max_errors=30):
     if dataset_name == "test":
 
         task_name = "control" if CONTROL_TASK else "pos"
-        file_name = f"accuracy/{task_name}_layer{LAYER_NUMBER}.txt"
+        os.makedirs(f"accuracy/{PROBE_TYPE}/{task_name}", exist_ok=True)
+        file_name = f"accuracy/{PROBE_TYPE}/{task_name}/{PROBE_TYPE}_{task_name}_layer{LAYER_NUMBER}.txt"
 
         with open(file_name, "a") as f:
             f.write(f"Test Accuracy: {accuracy:.4f}\n")
@@ -252,7 +264,7 @@ def show_errors(probe, X, y, id_to_pos, dataset_name, max_errors=30):
             f.write(f"Test Weighted F1: {weighted_f1:.4f}\n")
 
     print("\n" + "=" * 60)
-    print(f"PROBE EVALUATION - {dataset_name.upper()} SET")
+    print(f"PROBE EVALUATION ({PROBE_TYPE.upper()}) - {dataset_name.upper()} SET")
     print("=" * 60)
 
     print(f"Accuracy:    {accuracy:.4f}")
@@ -324,21 +336,14 @@ def plot_confusion_matrix(probe, X_test, y_test, pos_tags):
         values_format="d"
     )
 
-    plt.title(f"Confusion Matrix - Layer {LAYER_NUMBER} - Test Set")
+    plt.title(f"Confusion Matrix - Layer {LAYER_NUMBER} ({PROBE_TYPE}) Test Set")
     plt.tight_layout()
 
-    # Save plot
-    if CONTROL_TASK:
-        plot_dir = "plots/control_task"
-    else:
-        plot_dir = "plots/pos"
+    task_name = "control" if CONTROL_TASK else "pos"
+    plot_dir = f"plots/{PROBE_TYPE}/{task_name}"
 
     os.makedirs(plot_dir, exist_ok=True)
-
-    plt.savefig(
-        f"{plot_dir}/confusion_matrix_layer{LAYER_NUMBER}.png"
-    )
-
+    plt.savefig(f"{plot_dir}/confusion_matrix_{PROBE_TYPE}_layer{LAYER_NUMBER}.png")
     plt.close()
 
 POS_TAGS = [
