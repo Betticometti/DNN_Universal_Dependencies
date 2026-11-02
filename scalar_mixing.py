@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import f1_score, confusion_matrix, ConfusionMatrixDisplay
 
 # Same configuration as probe.py
-CONTROL_TASK = False  # False = POS task True = control task
 EPOCHS = 10
 LR = 1e-3
 BATCH_SIZE = 128
@@ -19,7 +18,7 @@ NUM_LAYERS = 12
 torch.manual_seed(42)
 
 BASE_DIR = Path(__file__).resolve().parent
-OUTPUT_DIR = BASE_DIR / "scalatr_mixing"
+OUTPUT_DIR = BASE_DIR / "scalar_mixing"
 
 POS_TAGS = [
     "ADJ", "ADP", "ADV", "AUX", "CCONJ", "DET",
@@ -200,6 +199,7 @@ def evaluate_results(probe, X, y, dataset_name, out_dir):
             predictions.extend(batch_predictions)
             true_labels.extend(y_batch.tolist())
 
+
     accuracy = sum(
         actual == predicted
         for actual, predicted in zip(true_labels, predictions)
@@ -236,43 +236,36 @@ def plot_confusion_matrix(y_true, y_pred, out_dir):
     plt.savefig(out_dir / "confusion_matrix.png")
     plt.close()
 
-# Load datasets, train and evaluate the probe, and save all results
+
+# Load datasets, train and evaluate the POS probe, and save all results
 def main():
-    task_name = "control" if CONTROL_TASK else "pos"
-    data_dir = BASE_DIR / ("control_embeddings" if CONTROL_TASK else "embeddings")
-    out_dir = OUTPUT_DIR / task_name
+    data_dir = BASE_DIR / "embeddings"
+    out_dir = OUTPUT_DIR / "pos"
     os.makedirs(out_dir, exist_ok=True)
-    print(f"Task: {task_name} | Source: {data_dir}")
+
+    print(f"Task: POS | Source: {data_dir}")
 
     X_train, y_train = load_embeddings("train", data_dir)
     X_val, y_val = load_embeddings("validation", data_dir)
     X_test, y_test = load_embeddings("test", data_dir)
 
-    probe, best_epoch = train_probe(X_train, y_train, X_val, y_val, len(POS_TAGS), out_dir)
+    probe, best_epoch = train_probe(
+        X_train, y_train, X_val, y_val, len(POS_TAGS), out_dir
+    )
+
     with open(out_dir / "results.txt", "w") as f:
-        f.write(f"Task: {task_name}\nBest epoch: {best_epoch}\n")
+        f.write(f"Task: pos\nBest epoch: {best_epoch}\n")
 
     evaluate_results(probe, X_val, y_val, "validation", out_dir)
 
     test_accuracy, true_labels, predictions = evaluate_results(
-        probe, X_test, y_test, "test", out_dir)
+        probe, X_test, y_test, "test", out_dir
+    )
 
     save_layer_weights(probe, out_dir)
     plot_confusion_matrix(true_labels, predictions, out_dir)
-    print(f"\nResults saved to {out_dir}")
 
-    # If both tasks have already run, calculate selectivity from their test accuracies.
-    other_task = "pos" if CONTROL_TASK else "control"
-    other_results = OUTPUT_DIR / other_task / "results.txt"
-    if other_results.exists():
-        for line in other_results.read_text().splitlines():
-            if line.startswith("Test Accuracy:"):
-                other_accuracy = float(line.split(":", 1)[1])
-                selectivity = (other_accuracy - test_accuracy) if CONTROL_TASK else (test_accuracy - other_accuracy)
-                message = f"Test selectivity (POS - Control): {selectivity:.4f}"
-                print(message)
-                (OUTPUT_DIR / "selectivity.txt").write_text(message + "\n")
-                break
+    print(f"\nResults saved to {out_dir}")
 
 
 if __name__ == "__main__":
