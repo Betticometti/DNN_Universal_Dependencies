@@ -13,25 +13,10 @@ PROBE_TYPE = "mlp" # "mlp" "linear"
 
 torch.manual_seed(42)
 
-# EPOCHS -- Number of complete passes over the training dataset.
-#           Too few epochs may lead to underfitting.
-#           Too many epochs may lead to overfitting.
-#           Try 5, 10, or 20 epochs and compare validation accuracy.
-
 EPOCHS = 10
 
-# LR -- Learning rate for the Adam optimizer.
-#       A larger learning rate may speed up training but make it unstable.
-#       A smaller learning rate gives smaller updates but may require
-#       more epochs.
-#       Consider 1e-2, 1e-3, or 1e-4.
-
+# Learning rate for the Adam optimizer.
 LR = 1e-3
-
-# BATCH_SIZE -- Number of word embeddings used per parameter update.
-#               Smaller batches give more frequent, noisier updates.
-#               Larger batches give fewer updates per epoch.
-#               Consider 32, 64, 128, or 256.
 
 BATCH_SIZE = 128
 
@@ -40,7 +25,7 @@ BATCH_SIZE = 128
 
 # Probe for POS classification (linear or MLP)
 class Probe(nn.Module):
-    # hidden_dim was 128 before, but hewitt and liang talked about having it way lower
+    # hidden_dim was 128 before, but hewitt and liang talked about having it way lower to increase selectivity
     def __init__(self, input_dim, num_classes, probe_type="linear", hidden_dim=10):
         super().__init__()
         self.probe_type = probe_type

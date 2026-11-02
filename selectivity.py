@@ -96,12 +96,12 @@ def calculate_selectivity():
 
         pos_file = (
             f"accuracy/{PROBE_TYPE}/pos/"
-            f"{PROBE_TYPE}_pos_layer{layer}.txt"
+            f"pos_layer{layer}.txt"
         )
 
         control_file = (
             f"accuracy/{PROBE_TYPE}/control/"
-            f"{PROBE_TYPE}_control_layer{layer}.txt"
+            f"control_layer{layer}.txt"
         )
 
         pos_accuracy = read_accuracy(pos_file)
