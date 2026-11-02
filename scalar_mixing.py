@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import f1_score, confusion_matrix, ConfusionMatrixDisplay
 
 # Same configuration as probe.py
-CONTROL_TASK = False  # False = POS task, True = control task
+CONTROL_TASK = False  # False = POS task True = control task
 EPOCHS = 10
 LR = 1e-3
 BATCH_SIZE = 128

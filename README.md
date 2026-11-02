@@ -8,7 +8,7 @@
 - **Dataset:** Universal Dependencies English Web Treebank (UD English-EWT)
 - **Model:** `google-bert/bert-base-uncased`
 - **Task:** Part-of-Speech classification (17 Universal POS tags)
-- **Classifier:** Linear probe and Multi-Layer Perceptron (MLP)
+- **Classifier:** Linear probe, Multi-Layer Perceptron (MLP) and Scalar Mixing with a linear probe
 
 ## Main Files
 
@@ -19,6 +19,7 @@
 | `control_task.py` | Creates random POS labels for the control task. |
 | `probe.py` | Trains and evaluates POS and control probes. |
 | `selectivity.py` | Calculates selectivity and generates comparison plots. |
+| `scalar_mixing.py` | Learns a weighted combination of BERT layer embeddings and trains a linear probe. |
 | `EDA/eda_dataset.py` | Analyzes dataset sizes and POS tag distributions. |
 | `EDA/eda_tokenization.py` | Analyzes WordPiece tokenization and sentence lengths. |
 
@@ -48,3 +49,7 @@ Then run: `python selectivity.py`
 Calculates selectivity as the difference between POS test accuracy and control test accuracy for each layer.
 The comparison plots are saved in:
 `plots/linear/selectivity/` and in `plots/mlp/selectivity/`
+
+`python scalar_mixing.py`
+The model learns a weighted combination of embeddings from all 12 BERT layers while jointly training a linear probe.
+Results are saved in: scalar_mixing/pos/ and scalar_mixing/control/
