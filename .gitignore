@@ -13,6 +13,7 @@ __pycache__/
 embeddings/
 control_embeddings/
 accuracy/
+scalatr_mixing/
 
 # Plot folder
 plots/
