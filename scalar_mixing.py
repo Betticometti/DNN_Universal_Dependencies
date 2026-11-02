@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import f1_score, confusion_matrix, ConfusionMatrixDisplay
 
 # Same configuration as probe.py
-CONTROL_TASK = True  # False = POS task; True = control task
+CONTROL_TASK = False  # False = POS task, True = control task
 EPOCHS = 10
 LR = 1e-3
 BATCH_SIZE = 128
@@ -29,7 +29,7 @@ POS_TAGS = [
 id_to_pos = {i: tag for i, tag in enumerate(POS_TAGS)}
 
 
-# Load the 12 layers for a split: [words, 12, 768]
+# Load and combine embeddings from all 12 BERT layers
 def load_embeddings(split, data_dir):
     X = None
     labels = None
@@ -42,7 +42,6 @@ def load_embeddings(split, data_dir):
 
         if X is None:
             labels = y.clone()
-            # Allocate the final tensor directly, avoiding an extra torch.stack copy.
             X = torch.empty((len(y), NUM_LAYERS, x.shape[1]), dtype=torch.float32)
         else:
             if not torch.equal(labels, y):
@@ -56,21 +55,21 @@ def load_embeddings(split, data_dir):
 
     return X, labels
 
-
-# Linear probe, preceded by a learned weighted average of BERT layers
+# Linear probe that learns how to combine embeddings from different BERT layers
 class ScalarMixProbe(nn.Module):
+    # Initialize the learnable layer weights and linear classifier
     def __init__(self, input_dim, num_classes):
         super().__init__()
         self.layer_weights = nn.Parameter(torch.zeros(NUM_LAYERS))
         self.model = nn.Linear(input_dim, num_classes)
-
+    
+    # Combine layer embeddings using learned weights and predict POS labels
     def forward(self, x):
         weights = torch.softmax(self.layer_weights, dim=0)
         mixed = (x * weights.view(1, NUM_LAYERS, 1)).sum(dim=1)
         return self.model(mixed)
 
-
-# Same validation-accuracy evaluation as probe.py
+# Calculate classification accuracy on a given dataset
 def evaluate_probe(probe, loader, device):
     probe.eval()
     correct, total = 0, 0
@@ -82,7 +81,7 @@ def evaluate_probe(probe, loader, device):
             total += y.size(0)
     return correct / total
 
-
+# Plot and save training loss, training accuracy, and validation accuracy
 def plot_training(train_losses, train_accuracies, val_accuracies, out_dir):
     epochs = range(1, len(train_losses) + 1)
     plt.figure(figsize=(12, 4))
@@ -106,15 +105,20 @@ def plot_training(train_losses, train_accuracies, val_accuracies, out_dir):
     plt.savefig(out_dir / "training.png")
     plt.close()
 
-
+# Print and save the learned weights of all 12 BERT layers
 def save_layer_weights(probe, out_dir):
     weights = torch.softmax(probe.layer_weights.detach().cpu(), dim=0)
+    layers = torch.arange(1, NUM_LAYERS + 1)
+    cog = (layers * weights).sum().item()
+
+    print(f"Center of Gravity: {cog:.4f}")
     with open(out_dir / "layer_weights.txt", "w") as f:
         for layer, weight in enumerate(weights.tolist(), start=1):
             line = f"Layer {layer:2d}: {weight:.6f}"
             print(line)
             f.write(line + "\n")
         f.write(f"Highest weight: Layer {weights.argmax().item() + 1}\n")
+        f.write(f"Center of Gravity: {cog:.4f}\n")
 
     plt.figure(figsize=(10, 5))
     plt.bar(range(1, NUM_LAYERS + 1), weights.tolist())
@@ -127,8 +131,7 @@ def save_layer_weights(probe, out_dir):
     plt.savefig(out_dir / "layer_weights.png")
     plt.close()
 
-
-# Train and restore the parameters with the best validation accuracy
+# Train the probe and restore the model with the best validation accuracy
 def train_probe(X_train, y_train, X_val, y_val, num_classes, out_dir):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=BATCH_SIZE, shuffle=True)
@@ -173,35 +176,47 @@ def train_probe(X_train, y_train, X_val, y_val, num_classes, out_dir):
     probe.load_state_dict(best_state)
     print(f"Best validation accuracy: {best_val:.4f} (epoch {best_epoch})")
     plot_training(train_losses, train_accuracies, val_accuracies, out_dir)
-    torch.save(probe.state_dict(), out_dir / "best_model.pt")
     return probe, best_epoch
 
-
-# Same evaluation and first 30 errors as probe.py
-def show_errors(probe, X, y, dataset_name, out_dir, max_errors=30):
+# Calculate and save accuracy and F1 scores for a given dataset
+def evaluate_results(probe, X, y, dataset_name, out_dir):
     device = next(probe.parameters()).device
     probe.eval()
-    loader = DataLoader(TensorDataset(X, y), batch_size=BATCH_SIZE, shuffle=False)
-    errors, predictions, true_labels = [], [], []
-    index = 0
+
+    loader = DataLoader(
+        TensorDataset(X, y),
+        batch_size=BATCH_SIZE,
+        shuffle=False
+    )
+
+    predictions = []
+    true_labels = []
+
     with torch.no_grad():
         for x_batch, y_batch in loader:
             outputs = probe(x_batch.to(device))
             batch_predictions = outputs.argmax(1).cpu().tolist()
-            batch_labels = y_batch.tolist()
-            predictions.extend(batch_predictions)
-            true_labels.extend(batch_labels)
-            for actual, predicted in zip(batch_labels, batch_predictions):
-                if actual != predicted:
-                    errors.append((index, actual, predicted))
-                index += 1
 
-    accuracy = 1 - len(errors) / len(y)
-    macro_f1 = f1_score(true_labels, predictions, average="macro", zero_division=0)
-    weighted_f1 = f1_score(true_labels, predictions, average="weighted", zero_division=0)
+            predictions.extend(batch_predictions)
+            true_labels.extend(y_batch.tolist())
+
+    accuracy = sum(
+        actual == predicted
+        for actual, predicted in zip(true_labels, predictions)
+    ) / len(true_labels)
+
+    macro_f1 = f1_score(
+        true_labels, predictions, average="macro", zero_division=0
+    )
+
+    weighted_f1 = f1_score(
+        true_labels, predictions, average="weighted", zero_division=0
+    )
 
     print(f"\nSCALAR MIXING - {dataset_name.upper()}")
-    print(f"Accuracy: {accuracy:.4f} | Macro F1: {macro_f1:.4f} | Weighted F1: {weighted_f1:.4f}")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Macro F1: {macro_f1:.4f}")
+    print(f"Weighted F1: {weighted_f1:.4f}")
 
     with open(out_dir / "results.txt", "a") as f:
         f.write(f"{dataset_name.title()} Accuracy: {accuracy:.4f}\n")
@@ -210,7 +225,7 @@ def show_errors(probe, X, y, dataset_name, out_dir, max_errors=30):
 
     return accuracy, true_labels, predictions
 
-
+# Generate and save the confusion matrix for the test set
 def plot_confusion_matrix(y_true, y_pred, out_dir):
     cm = confusion_matrix(y_true, y_pred, labels=range(len(POS_TAGS)))
     fig, ax = plt.subplots(figsize=(12, 10))
@@ -221,7 +236,7 @@ def plot_confusion_matrix(y_true, y_pred, out_dir):
     plt.savefig(out_dir / "confusion_matrix.png")
     plt.close()
 
-
+# Load datasets, train and evaluate the probe, and save all results
 def main():
     task_name = "control" if CONTROL_TASK else "pos"
     data_dir = BASE_DIR / ("control_embeddings" if CONTROL_TASK else "embeddings")
@@ -237,8 +252,11 @@ def main():
     with open(out_dir / "results.txt", "w") as f:
         f.write(f"Task: {task_name}\nBest epoch: {best_epoch}\n")
 
-    show_errors(probe, X_val, y_val, "validation", out_dir)
-    test_accuracy, true_labels, predictions = show_errors(probe, X_test, y_test, "test", out_dir)
+    evaluate_results(probe, X_val, y_val, "validation", out_dir)
+
+    test_accuracy, true_labels, predictions = evaluate_results(
+        probe, X_test, y_test, "test", out_dir)
+
     save_layer_weights(probe, out_dir)
     plot_confusion_matrix(true_labels, predictions, out_dir)
     print(f"\nResults saved to {out_dir}")
