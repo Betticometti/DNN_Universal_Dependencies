@@ -16,6 +16,7 @@
 
 | `test_bert.py` | Loads the dataset, tokenizer, and pretrained BERT model. |
 | `extract_embeddings.py` | Extracts and saves word embeddings from BERT layers. |
+
 | `control_task.py` | Creates random POS labels for the control task. |
 | `probe.py` | Trains and evaluates POS and control probes. |
 | `selectivity.py` | Calculates selectivity and generates comparison plots. |
