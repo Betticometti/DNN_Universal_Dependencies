@@ -1,5 +1,4 @@
 import os
-
 from sklearn.metrics import f1_score
 import torch
 import torch.nn as nn
@@ -10,18 +9,11 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 LAYER_NUMBER = 1
 CONTROL_TASK = False
 PROBE_TYPE = "mlp" # "mlp" "linear"
-
-torch.manual_seed(42)
-
 EPOCHS = 10
-
-# Learning rate for the Adam optimizer.
-LR = 1e-3
-
+LR = 1e-3         # learning rate for the Adam optimizer
 BATCH_SIZE = 128
 
-# -------------------------------------------------------------------------------
-
+torch.manual_seed(42)
 
 # Probe for POS classification (linear or MLP)
 class Probe(nn.Module):
@@ -340,50 +332,58 @@ POS_TAGS = [
 id_to_pos = {i: tag for i, tag in enumerate(POS_TAGS)}
 
 # single run of training and evaluation for a specific layer and task
-""" # Load embeddings
-if CONTROL_TASK:
-    data_dir = "control_embeddings"
-else:
-    data_dir = "embeddings"
+def run_single_training_eval_test():
+    global LAYER_NUMBER, CONTROL_TASK
 
-train_data = torch.load(
-    f"{data_dir}/train_layer{LAYER_NUMBER}.pt",
-    weights_only=True
-)
+    for CONTROL_TASK in [False, True]:
+        # Load embeddings
+        if CONTROL_TASK:
+            data_dir = "control_embeddings"
+            print(f"\n\nRunning probe for control task - layer {LAYER_NUMBER}")
+        else:
+            print(f"\n\nRunning probe for POS classification - layer {LAYER_NUMBER}")
+            data_dir = "embeddings"
 
-val_data = torch.load(
-    f"{data_dir}/validation_layer{LAYER_NUMBER}.pt",
-    weights_only=True
-)
+        train_data = torch.load(
+            f"{data_dir}/train_layer{LAYER_NUMBER}.pt",
+            weights_only=True
+        )
 
-test_data = torch.load(
-    f"{data_dir}/test_layer{LAYER_NUMBER}.pt",
-    weights_only=True
-)
+        val_data = torch.load(
+            f"{data_dir}/validation_layer{LAYER_NUMBER}.pt",
+            weights_only=True
+        )
 
-X_train = train_data["embeddings"]
-y_train = train_data["labels"]
+        test_data = torch.load(
+            f"{data_dir}/test_layer{LAYER_NUMBER}.pt",
+            weights_only=True
+        )
 
-X_val = val_data["embeddings"]
-y_val = val_data["labels"]
+        X_train = train_data["embeddings"]
+        y_train = train_data["labels"]
 
-X_test = test_data["embeddings"]
-y_test = test_data["labels"]
+        X_val = val_data["embeddings"]
+        y_val = val_data["labels"]
+
+        X_test = test_data["embeddings"]
+        y_test = test_data["labels"]
+
+        # Train the probe
+        probe = train_probe(X_train, y_train, X_val, y_val, 17)
+
+        # Analyze classification errors on validation set
+        show_errors(probe, X_val, y_val, id_to_pos, "validation")
+
+        # Analyze classification errors on test set
+        show_errors(probe, X_test, y_test, id_to_pos, "test")
+
+        # Plot confusion matrix on test set
+        plot_confusion_matrix(probe, X_test, y_test, POS_TAGS)
+    
+    return
 
 
-# Train the probe
-probe = train_probe(X_train, y_train, X_val, y_val, 17)
-
-# Analyze classification errors on validation set
-show_errors(probe, X_val, y_val, id_to_pos, "validation")
-
-# Analyze classification errors on test set
-show_errors(probe, X_test, y_test, id_to_pos, "test")
-
-# Plot confusion matrix on test set
-plot_confusion_matrix(probe, X_test, y_test, POS_TAGS) """
-
-# Train and evaluate POS and control probes across all BERT layers
+# train and evaluate POS and control probes for all layers
 def run_all_training_eval_tests():
     global LAYER_NUMBER, CONTROL_TASK
 
@@ -448,4 +448,6 @@ def run_all_training_eval_tests():
 
     return
 
-run_all_training_eval_tests()
+
+# run_all_training_eval_tests()
+run_single_training_eval_test()

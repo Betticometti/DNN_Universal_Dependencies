@@ -18,5 +18,7 @@ git status
 # echo "=== GPU ==="
 # nvidia-smi
 
+
+
 echo "=== Ready ==="
 exec bash -i
