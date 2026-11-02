@@ -14,6 +14,7 @@ embeddings/
 control_embeddings/
 accuracy/
 scalatr_mixing/
+dependency_labels/
 
 # Plot folder
 plots/
