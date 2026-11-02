@@ -268,5 +268,4 @@ def main():
     print(f"\nResults saved to {out_dir}")
 
 
-if __name__ == "__main__":
-    main()
+main()

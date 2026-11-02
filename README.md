@@ -15,14 +15,21 @@
 | File | Description |
 
 | `test_bert.py` | Loads the dataset, tokenizer, and pretrained BERT model. |
+
 | `extract_embeddings.py` | Extracts and saves word embeddings from BERT layers. |
 
 | `control_task.py` | Creates random POS labels for the control task. |
+
 | `probe.py` | Trains and evaluates POS and control probes. |
+
 | `selectivity.py` | Calculates selectivity and generates comparison plots. |
+
 | `scalar_mixing.py` | Learns a weighted combination of BERT layer embeddings and trains a linear probe. |
+
 | `EDA/eda_dataset.py` | Analyzes dataset sizes and POS tag distributions. |
+
 | `EDA/eda_tokenization.py` | Analyzes WordPiece tokenization and sentence lengths. |
+
 
 ## How to Run
 
@@ -53,4 +60,4 @@ The comparison plots are saved in:
 
 `python scalar_mixing.py`
 The model learns a weighted combination of embeddings from all 12 BERT layers while jointly training a linear probe.
-Results are saved in: scalar_mixing/pos/ and scalar_mixing/control/
+Results are saved in: `scalar_mixing/pos/` and `scalar_mixing/control/`
