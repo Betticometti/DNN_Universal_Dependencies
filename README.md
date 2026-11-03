@@ -1,7 +1,7 @@
 # DNN_Universal_Dependencies
 **ELE680 Deep Neural Networks – Probing Language Model**
 
-**Group 8**
+**Group 8**: Riccardo Antonelli - Elisabetta Cometti
 
 ## Dataset and Model
 
@@ -24,7 +24,7 @@
 
 | `selectivity.py` | Calculates selectivity and generates comparison plots. |
 
-| `scalar_mixing.py` | Learns a weighted combination of BERT layer embeddings and trains a linear probe. |
+| `scalar_mixing.py` | Learns a weighted combination of BERT layer embeddings and trains a linear probe. POSSIBILE MLP PURE!!!!! |
 
 | `EDA/eda_dataset.py` | Analyzes dataset sizes and POS tag distributions. |
 
@@ -35,29 +35,36 @@
 
 Run the following commands from the project root directory, in this order:
 
-`python extract_embeddings.py`
-Extracts word embeddings and POS labels from the selected BERT layers and saves them in the `embeddings/` directory.
+1) `python extract_embeddings.py` 
 
-`python control_task.py`
-Assigns random but consistent labels to words and saves the resulting datasets in `control_embeddings/`.
+    Extracts word embeddings and POS labels from the selected BERT layer and saves them in the `embeddings/` directory.
 
-In probe.py, select the architecture:
-PROBE_TYPE = "linear" or "mlp"
-Then run: `python probe.py`
-Trains and evaluates both POS and control probes for the selected architecture.
-Results are saved in:
-`accuracy/linear/pos/` and `accuracy/linear/control/`
-`accuracy/mlp/pos/` and `accuracy/mlp/control/`
-`plots/linear/` and `plots/mlp/`
-Evaluation includes validation accuracy, test accuracy, Macro F1, Weighted F1, training curves, and confusion matrices.
+2) `python control_task.py`
 
-In selectivity.py, select the architecture:
-PROBE_TYPE = "linear" or "mlp"
-Then run: `python selectivity.py`
-Calculates selectivity as the difference between POS test accuracy and control test accuracy for each layer.
-The comparison plots are saved in:
-`plots/linear/selectivity/` and in `plots/mlp/selectivity/`
+    Assigns random but consistent labels to words and saves the resulting datasets in `control_embeddings/`.
 
-`python scalar_mixing.py`
-The model learns a weighted combination of embeddings from all 12 BERT layers while jointly training a linear probe.
-Results are saved in: `scalar_mixing/pos/` and `scalar_mixing/control/`
+3) In probe.py, select the architecture:
+    `PROBE_TYPE = "linear"` or `"mlp"`, then run:
+    `python probe.py`
+    
+    Trains and evaluates both POS and control probes for the selected architecture.
+    Results are saved in:
+    - `accuracy/linear/pos/` and `accuracy/linear/control/`
+    - `accuracy/mlp/pos/` and `accuracy/mlp/control/`
+    - `plots/linear/` and `plots/mlp/`
+    
+    Evaluation includes validation accuracy, test accuracy, Macro F1, Weighted F1, training curves, and confusion matrices.
+
+4) In selectivity.py, select the architecture:
+    `PROBE_TYPE = "linear"` or `"mlp"`, then run: 
+    `python selectivity.py`
+
+    Calculates selectivity as the difference between POS test accuracy and control test accuracy for each layer.
+    The comparison plots are saved in:
+    - `plots/linear/selectivity/` and in `plots/mlp/selectivity/`
+
+5) `python scalar_mixing.py`
+
+    The model learns a weighted combination of embeddings from all 12 BERT layers while jointly training a linear probe.
+    
+    Results are saved in: `scalar_mixing/pos/` and `scalar_mixing/control/`
