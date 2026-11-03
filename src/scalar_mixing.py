@@ -199,19 +199,15 @@ def evaluate_results(probe, X, y, dataset_name, out_dir):
             predictions.extend(batch_predictions)
             true_labels.extend(y_batch.tolist())
 
-
     accuracy = sum(
         actual == predicted
-        for actual, predicted in zip(true_labels, predictions)
-    ) / len(true_labels)
+        for actual, predicted in zip(true_labels, predictions)) / len(true_labels)
 
     macro_f1 = f1_score(
-        true_labels, predictions, average="macro", zero_division=0
-    )
+        true_labels, predictions, average="macro", zero_division=0)
 
     weighted_f1 = f1_score(
-        true_labels, predictions, average="weighted", zero_division=0
-    )
+        true_labels, predictions, average="weighted", zero_division=0)
 
     print(f"\nSCALAR MIXING - {dataset_name.upper()}")
     print(f"Accuracy: {accuracy:.4f}")
@@ -250,8 +246,7 @@ def main():
     X_test, y_test = load_embeddings("test", data_dir)
 
     probe, best_epoch = train_probe(
-        X_train, y_train, X_val, y_val, len(POS_TAGS), out_dir
-    )
+        X_train, y_train, X_val, y_val, len(POS_TAGS), out_dir)
 
     with open(out_dir / "results.txt", "w") as f:
         f.write(f"Task: pos\nBest epoch: {best_epoch}\n")
@@ -259,8 +254,7 @@ def main():
     evaluate_results(probe, X_val, y_val, "validation", out_dir)
 
     test_accuracy, true_labels, predictions = evaluate_results(
-        probe, X_test, y_test, "test", out_dir
-    )
+        probe, X_test, y_test, "test", out_dir)
 
     save_layer_weights(probe, out_dir)
     plot_confusion_matrix(true_labels, predictions, out_dir)
