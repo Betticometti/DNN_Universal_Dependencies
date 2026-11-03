@@ -19,7 +19,7 @@ def analyze_dataset(path):
         for sentence in parse_incr(file):
             sentence_count += 1
             for token in sentence:
-                # Skip multiword-token ranges and empty nodes.
+                # skip multiword token ranges and empty nodes
                 if not isinstance(token["id"], int):
                     continue
 
@@ -67,6 +67,4 @@ def main():
             percentage = 100 * count / total if total else 0
             print(f"{tag:<15}{count:>15,}{percentage:>14.2f}%")
 
-
-if __name__ == "__main__":
-    main()
+main()

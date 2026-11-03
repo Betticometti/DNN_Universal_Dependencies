@@ -60,7 +60,6 @@ def save_accuracy(accuracy):
     task_name = "control" if CONTROL_TASK else "pos"
     folder_path = f"accuracy/{PROBE_TYPE}/{task_name}"
     
-    # Crea l'intero percorso fino a "control" o "pos" in automatico
     os.makedirs(folder_path, exist_ok=True)
 
     file_name = f"{folder_path}/{PROBE_TYPE}_{task_name}_layer{LAYER_NUMBER}.txt"
@@ -129,7 +128,7 @@ def train_probe(X_train, y_train, X_val, y_val, num_classes):
         if val_acc > best_val:
             best_val = val_acc
             best_state = {
-                k: v.detach().clone()
+                k: v.detach().clone() #saving deep copy of the model state after detaching weight tensor
                 for k, v in probe.state_dict().items()
             }
 

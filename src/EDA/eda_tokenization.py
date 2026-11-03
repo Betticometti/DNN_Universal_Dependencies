@@ -93,5 +93,4 @@ def main():
         analyze_sentence_lengths(data, name)
 
 
-if __name__ == "__main__":
-    main()
+main()
