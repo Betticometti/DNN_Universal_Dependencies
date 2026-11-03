@@ -26,8 +26,7 @@ def read_metrics(file_path):
     return (
         metrics["Test Accuracy"],
         metrics["Test Macro F1"],
-        metrics["Test Weighted F1"]
-    )
+        metrics["Test Weighted F1"])
 
 
 # Plot POS performance across all BERT layers
@@ -96,12 +95,12 @@ def calculate_selectivity():
 
         pos_file = (
             f"accuracy/{PROBE_TYPE}/pos/"
-            f"pos_layer{layer}.txt"
+            f"{PROBE_TYPE}_pos_layer{layer}.txt"
         )
 
         control_file = (
             f"accuracy/{PROBE_TYPE}/control/"
-            f"control_layer{layer}.txt"
+            f"{PROBE_TYPE}_control_layer{layer}.txt"
         )
 
         pos_accuracy = read_accuracy(pos_file)

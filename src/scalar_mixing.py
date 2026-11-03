@@ -17,7 +17,7 @@ NUM_LAYERS = 12
 
 torch.manual_seed(42)
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = BASE_DIR / "scalar_mixing"
 
 POS_TAGS = [
@@ -27,30 +27,24 @@ POS_TAGS = [
 
 id_to_pos = {i: tag for i, tag in enumerate(POS_TAGS)}
 
-
-# Load and combine embeddings from all 12 BERT layers
+# Load embeddings from all 12 BERT layers
 def load_embeddings(split, data_dir):
     X = None
     labels = None
 
     for layer in range(1, NUM_LAYERS + 1):
         file_path = data_dir / f"{split}_layer{layer}.pt"
-        data = torch.load(file_path, map_location="cpu", weights_only=True)
+        data = torch.load(file_path, weights_only=True)
+
         x = data["embeddings"]
-        y = data["labels"].long()
+        y = data["labels"]
 
         if X is None:
-            labels = y.clone()
-            X = torch.empty((len(y), NUM_LAYERS, x.shape[1]), dtype=torch.float32)
-        else:
-            if not torch.equal(labels, y):
-                raise ValueError(f"Labels are different across layers in {file_path}")
-        if x.ndim != 2 or x.shape != (len(labels), 768):
-            raise ValueError(f"Unexpected embedding shape in {file_path}: {tuple(x.shape)}")
+            labels = y
+            X = torch.empty((len(y), NUM_LAYERS, 768))
 
         X[:, layer - 1, :] = x
         print(f"Loaded {split} layer {layer}/{NUM_LAYERS}")
-        del data, x, y
 
     return X, labels
 
@@ -185,8 +179,7 @@ def evaluate_results(probe, X, y, dataset_name, out_dir):
     loader = DataLoader(
         TensorDataset(X, y),
         batch_size=BATCH_SIZE,
-        shuffle=False
-    )
+        shuffle=False)
 
     predictions = []
     true_labels = []
@@ -199,19 +192,15 @@ def evaluate_results(probe, X, y, dataset_name, out_dir):
             predictions.extend(batch_predictions)
             true_labels.extend(y_batch.tolist())
 
-
     accuracy = sum(
         actual == predicted
-        for actual, predicted in zip(true_labels, predictions)
-    ) / len(true_labels)
+        for actual, predicted in zip(true_labels, predictions)) / len(true_labels)
 
     macro_f1 = f1_score(
-        true_labels, predictions, average="macro", zero_division=0
-    )
+        true_labels, predictions, average="macro", zero_division=0)
 
     weighted_f1 = f1_score(
-        true_labels, predictions, average="weighted", zero_division=0
-    )
+        true_labels, predictions, average="weighted", zero_division=0)
 
     print(f"\nSCALAR MIXING - {dataset_name.upper()}")
     print(f"Accuracy: {accuracy:.4f}")

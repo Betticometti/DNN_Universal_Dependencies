@@ -24,7 +24,7 @@
 
 | `selectivity.py` | Calculates selectivity and generates comparison plots. |
 
-| `scalar_mixing.py` | Learns a weighted combination of BERT layer embeddings and trains a linear probe. POSSIBILE MLP PURE!!!!! |
+| `scalar_mixing.py` | Learns a weighted combination of BERT layer embeddings and trains a linear probe. |
 
 | `eda_dataset.py` | Analyzes dataset sizes and POS tag distributions. |
 
@@ -37,17 +37,17 @@
 
 Run the following commands from the project root directory, in this order:
 
-1) `python extract_embeddings.py` 
+1) `python src/extract_embeddings.py` 
 
     Extracts word embeddings and POS labels from the selected BERT layer and saves them in the `embeddings/` directory.
 
-2) `python control_task.py`
+2) `python src/control_task.py`
 
     Assigns random but consistent labels to words and saves the resulting datasets in `control_embeddings/`.
 
 3) In probe.py, select the architecture:
     `PROBE_TYPE = "linear"` or `"mlp"`, then run:
-    `python probe.py`
+    `python src/probe.py`
     
     Trains and evaluates both POS and control probes for the selected architecture.
     Results are saved in:
@@ -59,14 +59,14 @@ Run the following commands from the project root directory, in this order:
 
 4) In selectivity.py, select the architecture:
     `PROBE_TYPE = "linear"` or `"mlp"`, then run: 
-    `python selectivity.py`
+    `python src/selectivity.py`
 
     Calculates selectivity as the difference between POS test accuracy and control test accuracy for each layer.
     The comparison plots are saved in:
     - `plots/linear/selectivity/` and in `plots/mlp/selectivity/`
 
-5) `python scalar_mixing.py`
+5) `python src/scalar_mixing.py`
 
     The model learns a weighted combination of embeddings from all 12 BERT layers while jointly training a linear probe.
     
-    Results are saved in: `scalar_mixing/pos/` and `scalar_mixing/control/`
+    Results are saved in: `scalar_mixing/pos/`
