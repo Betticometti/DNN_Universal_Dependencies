@@ -26,9 +26,11 @@
 
 | `scalar_mixing.py` | Learns a weighted combination of BERT layer embeddings and trains a linear probe. POSSIBILE MLP PURE!!!!! |
 
-| `EDA/eda_dataset.py` | Analyzes dataset sizes and POS tag distributions. |
+| `eda_dataset.py` | Analyzes dataset sizes and POS tag distributions. |
 
-| `EDA/eda_tokenization.py` | Analyzes WordPiece tokenization and sentence lengths. |
+| `eda_tokenization.py` | Analyzes WordPiece tokenization and sentence lengths. |
+
+| `view_embeddings.py` | Short visualization of selected embedding structure |
 
 
 ## How to Run
