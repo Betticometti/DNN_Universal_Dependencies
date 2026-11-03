@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 LAYER_NUMBER = 1
-CONTROL_TASK = False
+## CONTROL_TASK = False
 PROBE_TYPE = "mlp" # "mlp" "linear"
 EPOCHS = 10
 LR = 1e-3         # learning rate for the Adam optimizer
